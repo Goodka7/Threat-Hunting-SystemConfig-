@@ -33,30 +33,27 @@
 
 ## Related Queries:
 ```kql
-// Detect PowerShell commands that modify system configurations (e.g., disabling Defender)
-DeviceProcessEvents
-| where FileName == "powershell.exe" and ProcessCommandLine contains "Set-MpPreference"
-| project Timestamp, DeviceName, ActionType, ProcessCommandLine
-
 // Detect UAC modifications in the registry
 DeviceRegistryEvents
 | where RegistryKey == "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" and RegistryValueName == "EnableLUA"
-| project Timestamp, DeviceName, RegistryKey, RegistryValueName, RegistryValueData
+| project Timestamp, RegistryKey, RegistryValueName, RegistryValueData
 
-// Detect RDP enabling via command line or registry
+// Detect suspicious processes modifying configurations
 DeviceProcessEvents
-| where FileName == "cmd.exe" and ProcessCommandLine contains "Set-ItemProperty" and ProcessCommandLine contains "fDenyTSConnections"
-| project Timestamp, DeviceName, ActionType, ProcessCommandLine
+| where FileName in~ ("regedit.exe", "powershell.exe", "cmd.exe", "sc.exe")
+| where ProcessCommandLine has_any ("Set-", "Disable", "Enable", "-ExecutionPolicy", "-NoProfile", "-NonInteractive", "bypass", "New-ItemProperty")
+| project Timestamp, FileName, ProcessCommandLine, InitiatingProcessFileName, AccountName
 
-// Detect new local admin accounts or privilege escalations
+// Detect unusual network activity following system changes
+DeviceNetworkEvents
+| where RemotePort in (3389, 445, 135) or RemoteUrl has_any (".onion", "raw.githubusercontent.com", "unknown-domain")
+| where ActionType in ("ConnectionSuccess", "ConnectionFailed")
+| project Timestamp, RemoteIP, RemotePort, RemoteUrl, ActionType, InitiatingProcessFileName, InitiatingProcessAccountName
+
+// Detect group policy modifications involving administrators
 DeviceProcessEvents
-| where FileName == "net.exe" and ProcessCommandLine contains "localgroup administrators"
-| project Timestamp, DeviceName, ActionType, FileName, ProcessCommandLine
-
-// Detect unauthorized software installations
-DeviceFileEvents
-| where FileName in~ ["unauthorized_tool.exe", "unapproved_installer.exe"]
-| project Timestamp, DeviceName, ActionType, FileName
+| where ProcessCommandLine has "administrators"
+| project Timestamp, FileName, ProcessCommandLine, InitiatingProcessAccountName
 ```
 
 ---
