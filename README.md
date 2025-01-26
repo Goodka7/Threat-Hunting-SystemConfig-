@@ -59,9 +59,9 @@ DeviceProcessEvents
 | where DeviceName == "thscenariovm"
 | where FileName in~ ("regedit.exe", "powershell.exe", "cmd.exe", "sc.exe")
 | where ProcessCommandLine has_any ("Set-", "Disable", "Enable", "-ExecutionPolicy", "-NoProfile", "-NonInteractive", "bypass", "New-ItemProperty")
-| project Timestamp, DeviceName, FileName, ProcessCommandLine, InitiatingProcessFileName, AccountName```
-<img width="1212" alt="image" src="https://github.com/user-attachments/assets/926684fe-1507-4af8-abc5-3c8d466f3de2">
+| project Timestamp, DeviceName, FileName, ProcessCommandLine, InitiatingProcessFileName, AccountName
 ```
+<img width="1212" alt="image" src="https://github.com/user-attachments/assets/926684fe-1507-4af8-abc5-3c8d466f3de2">
 
 ---
 
