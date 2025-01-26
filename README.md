@@ -115,17 +115,12 @@ DeviceProcessEvents
 - **Action:** Registry value modification detected.
 - **Command:** `Set-ItemProperty -Path "HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System" -Name "EnableLUA" -Value 0`
 - **Initiating Process:** `cmd.exe`
-- **Registry Key:** `HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System`
-- **Registry Value Name:** `EnableLUA`
-- **Registry Value Data:** `0`
 
 ### 2. Windows Defender Disabled
 - **Time:** `1:03:10 PM, January 26, 2025`
 - **Event:** Windows Defender real-time monitoring was disabled via `powershell.exe` using the `Set-MpPreference` command.
 - **Action:** Process executed to modify security settings.
 - **Command:** `Set-MpPreference -DisableRealtimeMonitoring $true`
-- **Initiating Process:** `powershell.exe`
-- **File Path:** Not applicable.
 
 ### 3. Administrators Group Modified
 - **Time:** `1:08:42 PM, January 26, 2025`
@@ -155,18 +150,6 @@ The user "labuser" on the device "thscenariovm" performed a series of actions th
 
 ## Response Taken
 
-Upon confirming these suspicious activities on the device "thscenariovm" by the user "labuser," the following actions were taken:
-1. The device was isolated from the network to prevent further tampering.
-2. The user account "NewAdminAccount" was disabled to restrict unauthorized access.
-3. Security settings, including UAC and Windows Defender, were restored to their default states.
-4. Relevant logs were collected for forensic analysis, and the organization's incident response team was notified.
-5. Management was informed of the findings and provided with a detailed report to guide further action.
-
-
----
-
-## Response Taken
-
-Suspicious PowerShell activity was confirmed on the endpoint `thscenariovm` by the user `labuser`. The device was immediately isolated to prevent further potential misuse, and the user's direct manager was notified for follow-up investigation and potential disciplinary action.
+Unauthorized System Configuration activity was confirmed on the endpoint `thscenariovm` by the user `labuser`. The device was immediately isolated to prevent further potential misuse, and the user's direct manager was notified for follow-up investigation, remediation and potential disciplinary action.
 
 ---
