@@ -18,7 +18,7 @@ Management is concerned about potential tampering with critical system configura
 - **Check `DeviceRegistryEvents`** for unauthorized registry changes, particularly those targeting security-related keys (e.g., Disabled Windows Defender, Modified UAC settings, Changed system policies)  
 - **Check `DeviceProcessEvents`** to look for suspicious processes used to execute configuration changes (e.g., regedit.exe, powershell.exe, cmd.exe, sc.exe)  
 - **Check `DeviceNetworkEvents`** to identify unusual network activity following system configuration changes.  
-- **Check `DeviceEvents`** for service modifications, particularly attempts to stop or disable critical security-related services (e.g., Windows Defender Antivirus)   
+- **Check `DeviceProcessEvents`** for group policy modifications (e.g., Administrators group)   
  
 ---
 
@@ -109,59 +109,64 @@ DeviceProcessEvents
 
 ## Chronological Event Timeline
 
-### 1. Process Execution - PowerShell Script Execution
+### 1. Registry Modification - Disable UAC
+- **Time:** `1:03:30 PM, January 26, 2025`
+- **Event:** The user "labuser" executed a command using `cmd.exe` that disabled User Account Control (UAC) by modifying the registry key `HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System`.
+- **Action:** Registry value modification detected.
+- **Command:** `Set-ItemProperty -Path "HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System" -Name "EnableLUA" -Value 0`
+- **Initiating Process:** `cmd.exe`
+- **Registry Key:** `HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System`
+- **Registry Value Name:** `EnableLUA`
+- **Registry Value Data:** `0`
 
-- **Time:** `2:08:23 PM, January 25, 2025`
-- **Event:** The user "system" executed `payload.ps1` via `powershell.exe` with the `-ExecutionPolicy Bypass` flag, indicating a bypass of default execution policies.
-- **Action:** Process creation detected.
-- **Command:** `"powershell.exe" -ExecutionPolicy Bypass -File "C:\Users\labuser\AppData\Local\Temp\payload.ps1"`
-- **Initiating Process:** `"cmd.exe" /c powershell.exe -ExecutionPolicy Bypass -File "C:\Users\labuser\AppData\Local\Temp\payload.ps1"`
-- **File Path:** `C:\Users\labuser\AppData\Local\Temp\payload.ps1`
-
-### 2. File Creation - Temporary Script
-
-- **Time:** `2:11:46 PM, January 25, 2025`
-- **Event:** A temporary PowerShell script was created during execution, named `__PSScriptPolicyTest_bdps4qml.1vq.ps1`.
-- **Action:** File creation detected.
-- **File Path:** `C:\Users\labuser\AppData\Local\Temp\__PSScriptPolicyTest_bdps4qml.1vq.ps1`
-- **Process Command:** `"powershell.exe" -ExecutionPolicy Bypass -File "C:\Users\labuser\AppData\Local\Temp\payload.ps1"`
-
-### 3. Process Execution - PowerShell with Encoded Command
-
-- **Time:** `2:37:16 PM, January 25, 2025`
-- **Event:** The `powershell.exe` process was executed with a suspicious encoded command by the `system` account.
-- **Action:** Process creation detected.
-- **Command:** `"powershell.exe" -noninteractive -outputFormat None -EncodedCommand "SQB0ACAAIgBHAEwAIgAA"`
-- **Initiating Process:** `"gc_worker.exe" -a WindowsDefenderExploitGuard -b -c`
+### 2. Windows Defender Disabled
+- **Time:** `1:03:10 PM, January 26, 2025`
+- **Event:** Windows Defender real-time monitoring was disabled via `powershell.exe` using the `Set-MpPreference` command.
+- **Action:** Process executed to modify security settings.
+- **Command:** `Set-MpPreference -DisableRealtimeMonitoring $true`
+- **Initiating Process:** `powershell.exe`
 - **File Path:** Not applicable.
 
-### 4. File Creation - Temporary PowerShell Script
+### 3. Administrators Group Modified
+- **Time:** `1:08:42 PM, January 26, 2025`
+- **Event:** The user "labuser" executed a command using `net.exe` to add the account `NewAdminAccount` to the `Administrators` group.
+- **Action:** Process detected adding a new administrator account.
+- **Command:** `net.exe localgroup administrators NewAdminAccount /add`
+- **Initiating Process:** `net.exe`
+- **Group:** `Administrators`
+- **Account Name:** `NewAdminAccount`
 
-- **Time:** `2:43:18 PM, January 25, 2025`
-- **Event:** Another temporary script file, `__PSScriptPolicyTest_xp01hqvv.wby.ps1`, was created during PowerShell execution.
-- **Action:** File creation detected.
-- **File Path:** `C:\Users\labuser\AppData\Local\Temp\__PSScriptPolicyTest_xp01hqvv.wby.ps1`
-- **Process Command:** `"powershell.exe" -ExecutionPolicy Bypass -File "C:\Users\labuser\AppData\Local\Temp\payload.ps1"`
-
-### 5. Process Execution - PowerShell via Explorer
-
-- **Time:** `2:43:18 PM, January 25, 2025`
-- **Event:** The `powershell.exe` process was executed by `explorer.exe` with no additional parameters.
-- **Action:** Process creation detected.
-- **Command:** `"PowerShell_ISE.exe"`
-- **Initiating Process:** `"explorer.exe"`
-- **File Path:** Not applicable.
+### 4. Registry Modification - Cached Updates Deleted
+- **Time:** `1:03:30 PM, January 26, 2025`
+- **Event:** A registry key modification was made to delete cached standalone update binaries from `HKEY_CURRENT_USER\SOFTWARE\Microsoft\WindowsUpdate`.
+- **Action:** Registry value deleted.
+- **Command:** `cmd.exe /q /c del /q "C:\Users\labuser\Updates\Standalone"`
+- **Initiating Process:** `cmd.exe`
+- **Registry Key:** `HKEY_CURRENT_USER\SOFTWARE\Microsoft\WindowsUpdate`
+- **Registry Value Name:** `Delete Cached Standalone Update Binary`
 
 ---
 
 ## Summary
 
-The user "labuser" on the device "hardmodevm" executed multiple suspicious PowerShell commands and created temporary files, raising concerns about potential misuse. First, "labuser" initiated the execution of a PowerShell script (`payload.ps1`) with the `-ExecutionPolicy Bypass` flag, bypassing standard security measures. During the execution, temporary script files such as `__PSScriptPolicyTest_bdps4qml.1vq.ps1` and `__PSScriptPolicyTest_xp01hqvv.wby.ps1` were created in the `C:\Windows\Temp` directory. These files indicate automated or obfuscated script activity. Additionally, encoded commands were executed through `powershell.exe`, initiated by `gc_worker.exe`, further suggesting the use of obfuscation techniques to conceal activity. The involvement of elevated accounts like "system" in conjunction with these processes raises further suspicion of privilege escalation or unauthorized operations. The combination of these actions points to potential malicious activity, such as script-based attacks or the disabling of security features, and warrants immediate investigation.
+The user "labuser" on the device "thscenariovm" performed a series of actions that align with tampering with critical system configurations. Key findings include the disabling of UAC and Windows Defender, as well as the addition of a new local administrator account to the `Administrators` group. These actions were executed using `cmd.exe` and `powershell.exe`, indicating deliberate attempts to weaken the system's security posture. Additionally, cached update binaries were deleted, which could disrupt system updates and prevent the application of security patches. The registry changes and process executions observed suggest potential malicious intent and warrant immediate investigation to assess the impact and prevent further exploitation.
 
 ---
 
 ## Response Taken
 
-Suspicious PowerShell activity was confirmed on the endpoint `hardmodevm` by the user `labuser`. The device was immediately isolated to prevent further potential misuse, and the user's direct manager was notified for follow-up investigation and potential disciplinary action.
+Upon confirming these suspicious activities on the device "thscenariovm" by the user "labuser," the following actions were taken:
+1. The device was isolated from the network to prevent further tampering.
+2. The user account "NewAdminAccount" was disabled to restrict unauthorized access.
+3. Security settings, including UAC and Windows Defender, were restored to their default states.
+4. Relevant logs were collected for forensic analysis, and the organization's incident response team was notified.
+5. Management was informed of the findings and provided with a detailed report to guide further action.
+
+
+---
+
+## Response Taken
+
+Suspicious PowerShell activity was confirmed on the endpoint `thscenariovm` by the user `labuser`. The device was immediately isolated to prevent further potential misuse, and the user's direct manager was notified for follow-up investigation and potential disciplinary action.
 
 ---
