@@ -2,16 +2,12 @@
 **Unauthorized Changes to System Configurations**
 
 ## Steps the "Bad Actor" Took Create Logs and IoCs:
-1. Access the system with administrative privileges (e.g., through RDP, local login).
-2. Modify critical system configurations such as:
-   - Disabling Windows Defender or tampering with security settings.
-   - Enabling remote desktop protocol (RDP) or other services to persist access.
-   - Creating new local administrator accounts.
-3. Install unauthorized software or configure system settings to allow persistence.
-   - Example: Disable Windows Defender using PowerShell: `Set-MpPreference -DisableRealtimeMonitoring $true`
-4. Create or modify Windows firewall rules to allow inbound access from specific IP addresses.
-   - Example: `New-NetFirewallRule -DisplayName "Allow RDP" -Direction Inbound -Protocol TCP -LocalPort 3389 -Action Allow`
-5. Remove any logs or evidence of the configuration changes.
+1. Disable Windows Defender using PowerShell: `Set-MpPreference -DisableRealtimeMonitoring $true`
+2. Modify UAC settings in the registry: `Set-ItemProperty -Path "HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System" -Name "EnableLUA" -Value 0`
+3. Disable automatic updates by creating a registry key: `New-ItemProperty -Path "HKLM:\Software\Policies\Microsoft\Windows\WindowsUpdate\AU" -Name "NoAutoUpdate" -Value 1 -PropertyType DWORD`
+4. Create a new local administrator account: `net user NewAdminAccount Password123! /add && net localgroup administrators NewAdminAccount /add`
+5. Enable Remote Desktop settings: `Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Value 0`
+6. Add a firewall rule to allow inbound traffic on port 3389: `New-NetFirewallRule -DisplayName "Simulate RDP Rule" -Direction Inbound -Protocol TCP -LocalPort 3389 -Action Allow`
 
 ---
 
