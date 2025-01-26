@@ -1,4 +1,4 @@
-<img width="300" src="https://github.com/user-attachments/assets/f6f37cd6-f490-4a32-982c-17ae2377fb90"/>
+<img width="400" src="https://github.com/user-attachments/assets/a3057464-cfa8-47fb-ad30-4c32c61e4c7d"/>
 
 # Threat Hunt Report: Suspicious PowerShell Activity
 - [Scenario Creation](https://github.com/Goodka7/Threat-Hunting-PowerShell-/blob/main/resources/Threat-Hunt-Event(PowerShell).md)
