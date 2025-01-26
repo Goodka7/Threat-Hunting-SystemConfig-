@@ -44,68 +44,66 @@ DeviceRegistryEvents
 
 ---
 
-### 2. Searched the `DeviceNetworkEvents` Table
+### 2. Searched the `DeviceProcessEvents` Table
 
-Searched for any connections that contained the commands "Invoke-WebRequest", "-Uri" and "http". 
+Searched for any process events that held "regedit.exe", "powershell.exe", "cmd.exe", or "sc.exe" in the FileName.
 
-The dataset reveals network activity originating from "hardmodevm", user "labuser", with notable connections initiated by powershell.exe using commands that include -ExecutionPolicy Bypass. External requests were made to URLs such as raw.githubusercontent.com, associated with IP addresses 185.199.108.133 and 185.199.111.133, both of which are commonly used to host scripts or files. These connections occurred over HTTPS (port 443) and were marked as successful (ConnectionSuccess). The combination of PowerShell usage with potentially suspicious URLs highlights activity that may involve downloading or executing external scripts, warranting further investigation.
+The dataset reveals process activity on the device "thscenariovm" involving commands executed by `cmd.exe` and `powershell.exe`, both of which are commonly used for system configuration changes. On **Jan 26, 2025, at 12:49:08 PM**, a command initiated by `runcommandextension.exe` executed `cmd.exe` with a PowerShell script using the `-ExecutionPolicy Unrestricted` flag. This was followed by similar commands at **1:16:13 PM** and **1:24:47 PM**, suggesting repeated attempts to run scripts with unrestricted policies. Additionally, on **Jan 26, 2025, at 12:41:03 PM**, a command was initiated by `powershell.exe` to execute another PowerShell script with potentially unsafe parameters, such as `-ExecutionPolicy Bypass`. 
+
+These activities highlight the use of elevated PowerShell and command-line operations, which align with potential tampering with critical configurations or the execution of unauthorized scripts. The repeated usage of `-ExecutionPolicy Unrestricted` and `-Bypass` flags warrants further investigation to determine whether these actions were authorized or indicative of malicious intent.
 
 **Query used to locate event:**
 
 ```kql
-DeviceNetworkEvents
-| where DeviceName == "hardmodevm"
-| where InitiatingProcessCommandLine contains "Invoke-WebRequest"
-      or InitiatingProcessCommandLine contains "-Uri"
-      or RemoteUrl has "http"
-| project Timestamp, DeviceName, InitiatingProcessFileName, InitiatingProcessCommandLine, RemoteUrl, RemoteIP, RemotePort, ActionType
-| order by Timestamp desc
-```
+DeviceProcessEvents
+| where DeviceName == "thscenariovm"
+| where FileName in~ ("regedit.exe", "powershell.exe", "cmd.exe", "sc.exe")
+| where ProcessCommandLine has_any ("Set-", "Disable", "Enable", "-ExecutionPolicy", "-NoProfile", "-NonInteractive", "bypass", "New-ItemProperty")
+| project Timestamp, DeviceName, FileName, ProcessCommandLine, InitiatingProcessFileName, AccountName```
 <img width="1212" alt="image" src="https://github.com/user-attachments/assets/926684fe-1507-4af8-abc5-3c8d466f3de2">
+```
 
 ---
 
-### 3. Searched the `DeviceFileEvents` Table
+### 3. Searched the `DeviceNetworksEvents` Table
 
-Searched for any new or suspicious file creations in temporary directories.
+Searched for any network activity that may give clues to malicious acts.
 
-The dataset reveals evidence of the execution of `payload.ps1`, with several temporary files created in the directory `C:\Users\labuser\AppData\Local\Temp\`. Files such as `__PSScriptPolicyTest_xp01hqvv.wby.ps1` were generated during the execution of `powershell.exe` and `powershell_ise.exe`, both of which used the `-ExecutionPolicy Bypass` parameter. These actions are marked as `FileCreated`, confirming that the payload execution resulted in temporary script files being generated. This activity indicates successful script execution with potentially bypassed security policies, warranting further investigation into the impact of these temporary files.
+The dataset reveals significant network activity originating from the device "thscenariovm." On **Jan 26, 2025, at 12:49:12 PM**, `powershell.exe` initiated multiple successful connections to `raw.githubusercontent.com` (IP address `185.199.111.133`) over HTTPS (port 443). Similarly, another connection to `raw.githubusercontent.com` (IP address `185.199.110.133`) was observed at **1:16:15 PM**, also using `powershell.exe`. These domains are known to host scripts and files, suggesting potential script download or execution activity. 
+
+The use of `powershell.exe` for network communication and repeated connections to script-hosting domains aligns with concerns about unauthorized activities and tampering with system configurations. These events warrant further investigation to assess whether they involve the execution of malicious scripts or unauthorized system changes.
+
 
 **Query used to locate events:**
 
 ```kql
-DeviceFileEvents
-| where DeviceName == "hardmodevm"
-| where FolderPath startswith "C:\\Windows\\Temp\\" or FolderPath contains "\\Temp\\"
-| where FileName endswith ".exe" or FileName endswith ".ps1"
-| project Timestamp, DeviceName, InitiatingProcessFileName, InitiatingProcessCommandLine, FolderPath, FileName, ActionType
-| order by Timestamp desc
+DeviceNetworkEvents
+| where DeviceName == "thscenariovm"
+| where RemotePort in (3389, 445, 135) or RemoteUrl has_any (".onion", "raw.githubusercontent.com", "unknown-domain")
+| where ActionType in ("ConnectionSuccess", "ConnectionFailed")
+| project Timestamp, DeviceName, RemoteIP, RemotePort, RemoteUrl, ActionType, InitiatingProcessFileName, InitiatingProcessAccountName
 ```
-<img width="1212" alt="image" src="https://github.com/user-attachments/assets/fc3c072b-e1e1-43c7-862c-6dce9f305d5c">
+<img width="1212" alt="image" src="https://github.com/user-attachments/assets/58865235-2a2c-4c44-ab32-dd0c0b933b23">
 
 ---
 
-### 4. Searched the `DeviceRegistryEvents` Table
+### 4. Searched the `DeviceProcessEvents` Table
 
-Searched for unusual changes, particularly in execution policies or PowerShell-related settings.
+Further searched for unusual changes, particularly with the word "administrators" in the command line.
 
-The data highlights changes on hardmodevm involving keys related to both PowerShell and general system configurations. Notably, registry keys such as HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\SystemCertificates and HKEY_CURRENT_USER\S-1-5-21...WindowsPowerShell\v1.0\powershell.exe were altered, with actions including RegistryValueSet and RegistryKeyCreated. These changes were initiated by processes like svchost.exe and explorer.exe. 
+The dataset reveals activity related to the addition of a user to the `Administrators` group on the device "thscenariovm." On **Jan 26, 2025, at 1:08:42 PM**, the command `"net.exe" localgroup administrators NewAdminAccount /add` was executed by the user `labuser`, successfully adding the account `NewAdminAccount` to the `Administrators` group. 
 
-While no direct link to altered execution policies was found, the involvement of PowerShell-related keys and potentially suspicious value modifications like Microsoft Corporation suggests configuration changes that might impact system behavior. These events warrant further review to determine their relationship with recent payload execution and possible security implications.
+Additionally, a second command, `"net.exe" localgroup administrators`, was executed at **Jan 26, 2025, at 1:09:56 PM**, listing the members of the `Administrators` group, which confirms the account was successfully added.
 
 **Query used to locate events:**
 
 ```kql
-DeviceRegistryEvents
-| where DeviceName == "hardmodevm"
-| where ActionType in ("RegistryValueSet", "RegistryKeyCreated", "RegistryKeyDeleted")
-| where RegistryKey contains "PowerShell" 
-      or RegistryKey contains "Microsoft"
-      or RegistryKey contains "Policies"
-| project Timestamp, DeviceName, RegistryKey, RegistryValueName, RegistryValueType, RegistryValueData, ActionType, InitiatingProcessFileName, InitiatingProcessCommandLine
-| order by Timestamp desc
+DeviceProcessEvents
+| where DeviceName == "thscenariovm"
+| where ProcessCommandLine has "administrators"
+| project Timestamp, DeviceName, FileName, ProcessCommandLine, InitiatingProcessAccountName
 ```
-<img width="1212" alt="image" src="https://github.com/user-attachments/assets/fbce844e-8ebd-40ad-96e0-49d0ddae1ce8">
+<img width="1212" alt="image" src="https://github.com/user-attachments/assets/aed5e71a-8641-4b5b-bf64-119cc0f9a010">
 
 ---
 
