@@ -24,23 +24,23 @@ Management is concerned about potential tampering with critical system configura
 
 ## Steps Taken
 
-### 1. Searched the `DeviceProcessEvents` Table
+### 1. Searched the `DeviceRegistryEvents` Table
 
-Searched for any process that had "cmd.exe", "rundll32.exe", "powershell_ise.exe" or "powershell.exe" in the command line. 
+Searched for any registry that action type held the value "RegistryValueSet" or "RegistryValueDeleted".
 
-The dataset reveals 88 records of process activity on the device "hardmodevm", by user "labuser" predominantly involving powershell.exe (47 instances) and cmd.exe (22 instances as initiating processes). Frequent use of PowerShell commands includes flags like -NoProfile, -NonInteractive, and -ExecutionPolicy Bypass, often triggered via cmd.exe or gc_worker.exe, suggesting possible script automation or suspicious activity. Initiating processes such as WindowsAzureGuestAgent.exe and timestamps concentrated on Jan 25, 2025, further indicate repeated execution patterns. These observations suggest potentially unauthorized or automated operations warranting deeper investigation.
+The dataset reveals registry activity originating from the device "thscenariovm" that aligns with concerns about tampering with critical system configurations. On **Jan 26, 2025, at 1:03:30 PM**, a command executed by `cmd.exe` deleted cached standalone update binaries, targeting the key `HKEY_CURRENT_USER\S-1-5-21-2408751320-1394585240-3964484208-500\SOFTWARE\Microsoft\WindowsUpdate` and altering the value `Delete Cached Standalone Update Binary`. This activity suggests potential interference with the system update mechanism. 
 
+Additionally, an update to the `OneDrive` path on **Jan 26, 2025, at 1:03:10 PM** indicates possible tampering with user-specific configurations. These events warrant further investigation to assess whether they represent unauthorized modifications aimed at weakening system defenses or enabling malicious activities.
 
 **Query used to locate events:**
 
 ```kql
-DeviceProcessEvents
-| where ProcessCommandLine has_any ("cmd.exe", "rundll32.exe", "powershell_ise.exe", "powershell.exe")
-| where DeviceName == "hardmodevm"
-| project Timestamp, DeviceName, FileName, ProcessCommandLine, InitiatingProcessFileName, InitiatingProcessCommandLine
-| order by Timestamp desc
+DeviceRegistryEvents
+| where DeviceName == "thscenariovm"
+| where ActionType in ("RegistryValueSet", "RegistryValueDeleted")
+| project Timestamp, DeviceName, RegistryKey, RegistryValueName, RegistryValueData, ActionType
 ```
-<img width="1212" alt="image" src="https://github.com/user-attachments/assets/e5e5fee9-fa90-403b-aed5-4553926bf119">
+<img width="1212" alt="image" src="https://github.com/user-attachments/assets/dca4eca9-ae52-4e44-bb01-596a9a4e80af">
 
 ---
 
