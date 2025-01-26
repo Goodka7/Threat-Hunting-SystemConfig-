@@ -16,19 +16,19 @@
 |---------------------|------------------------------------------------------------------------------|
 | **Name**| DeviceProcessEvents                                                            |
 | **Info**| https://learn.microsoft.com/en-us/defender-xdr/advanced-hunting-deviceprocessevents-table |
-| **Purpose**| Used to detect any PowerShell or command-line activities related to system configuration changes (e.g., disabling Defender, enabling RDP). |
+| **Purpose**| Used to detect any PowerShell or command-line activities related to disabling Defender, enabling RDP, or modifying system configurations. |
 
 | **Parameter**       | **Description**                                                              |
 |---------------------|------------------------------------------------------------------------------|
 | **Name**| DeviceRegistryEvents                                                           |
 | **Info**| https://learn.microsoft.com/en-us/defender-xdr/advanced-hunting-deviceregistryevents-table |
-| **Purpose**| Used to detect suspicious registry modifications such as changes to security settings, firewall rules, or other configuration changes. |
+| **Purpose**| Used to detect suspicious registry modifications such as disabling UAC, modifying firewall rules, or changing update policies. |
 
 | **Parameter**       | **Description**                                                              |
 |---------------------|------------------------------------------------------------------------------|
 | **Name**| DeviceFileEvents                                                              |
 | **Info**| https://learn.microsoft.com/en-us/defender-xdr/advanced-hunting-devicefileevents-table |
-| **Purpose**| Used to detect the installation of unauthorized software or the creation of new accounts. |
+| **Purpose**| Used to detect unauthorized software installations, changes to local administrator accounts, or file creations associated with persistence. |
 
 ---
 
@@ -39,24 +39,24 @@ DeviceProcessEvents
 | where FileName == "powershell.exe" and ProcessCommandLine contains "Set-MpPreference"
 | project Timestamp, DeviceName, ActionType, ProcessCommandLine
 
-// Detect RDP enabling via command line
-DeviceProcessEvents
-| where FileName == "cmd.exe" and ProcessCommandLine contains "New-NetFirewallRule"
-| project Timestamp, DeviceName, ActionType, ProcessCommandLine
-
-// Detect registry changes to critical security settings (e.g., disabling Defender)
+// Detect UAC modifications in the registry
 DeviceRegistryEvents
-| where RegistryKey in~ ["HKLM\\SOFTWARE\\Microsoft\\Windows Defender", "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies"]
+| where RegistryKey == "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System" and RegistryValueName == "EnableLUA"
 | project Timestamp, DeviceName, RegistryKey, RegistryValueName, RegistryValueData
 
-// Detect the creation of new local admin accounts or changes to existing ones
-DeviceFileEvents
-| where FileName has "net.exe" and ProcessCommandLine contains "user" and ProcessCommandLine contains "admin"
+// Detect RDP enabling via command line or registry
+DeviceProcessEvents
+| where FileName == "cmd.exe" and ProcessCommandLine contains "Set-ItemProperty" and ProcessCommandLine contains "fDenyTSConnections"
+| project Timestamp, DeviceName, ActionType, ProcessCommandLine
+
+// Detect new local admin accounts or privilege escalations
+DeviceProcessEvents
+| where FileName == "net.exe" and ProcessCommandLine contains "localgroup administrators"
 | project Timestamp, DeviceName, ActionType, FileName, ProcessCommandLine
 
-// Detect installation of unauthorized software (e.g., persistence tool)
+// Detect unauthorized software installations
 DeviceFileEvents
-| where FileName in~ ["malicious_tool.exe", "unauthorized_software.exe"]
+| where FileName in~ ["unauthorized_tool.exe", "unapproved_installer.exe"]
 | project Timestamp, DeviceName, ActionType, FileName
 ```
 
