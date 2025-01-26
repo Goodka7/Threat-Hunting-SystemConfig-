@@ -1,7 +1,7 @@
 <img width="400" src="https://github.com/user-attachments/assets/a3057464-cfa8-47fb-ad30-4c32c61e4c7d"/>
 
-# Threat Hunt Report: Suspicious PowerShell Activity
-- [Scenario Creation](https://github.com/Goodka7/Threat-Hunting-PowerShell-/blob/main/resources/Threat-Hunt-Event(PowerShell).md)
+# Threat Hunt Report: Unauthorized System Configuration Changes
+- [Scenario Creation](https://github.com/Goodka7/Threat-Hunting-SystemConfig-/blob/main/resources/Threat-Hunt-Event(SystemConfig).md)
 
 ## Platforms and Languages Leveraged
 - Windows 10 Virtual Machines (Microsoft Azure)
@@ -11,14 +11,15 @@
 
 ##  Scenario
 
-Management is concerned about potential misuse of PowerShell to execute malicious commands or disable security features. Recent security logs indicate irregular PowerShell execution patterns, including encoded commands and the disabling of security tools. The goal is to detect suspicious PowerShell usage, such as obfuscated scripts or unauthorized execution of system commands, and analyze any related security incidents. If any suspicious activity is identified, notify management for further investigation.
+Management is concerned about potential tampering with critical system configurations that could weaken security defenses or enable malicious activities. Recent security logs have revealed irregular modifications to registry keys and firewall rules, including attempts to disable Windows Defender and change system policies. The goal is to detect suspicious system configuration changes, such as unauthorized registry edits, firewall modifications, or service disruptions, and analyze any related security incidents. If any suspicious activity is identified, notify management for further investigation.
 
 ### High-Level PowerShell Discovery Plan
 
-- **Check `DeviceProcessEvents`** for PowerShell processes executed in a suspicious manner (e.g., via`cmd.exe`, `rundll32.exe`).
-- **Check `DeviceNetworkEvents`** for any network activity involving suspicious external requests (e.g., file download attempts using `Invoke-WebRequest`).
-- **Check `DeviceFileEvents`** any new or suspicious file creations in temporary directories (e.g., `C:\Windows\Temp\FakeMalware`).
-- **Check `DeviceRegistryEvents`** for unusual changes, particularly in execution policies or PowerShell-related settings.
+- **Check `DeviceRegistryEvents`** for unauthorized registry changes, particularly those targeting security-related keys (e.g., Disabled Windows Defender, Modified UAC settings, Changed system policies)  
+- **Check `DeviceProcessEvents`** to look for suspicious processes used to execute configuration changes (e.g., regedit.exe, powershell.exe, cmd.exe, sc.exe)  
+- **Check `DeviceNetworkEvents`** to identify unusual network activity following system configuration changes.  
+- **Check `DeviceEvents`** for service modifications, particularly attempts to stop or disable critical security-related services (e.g., Windows Defender Antivirus)   
+ 
 ---
 
 ## Steps Taken
