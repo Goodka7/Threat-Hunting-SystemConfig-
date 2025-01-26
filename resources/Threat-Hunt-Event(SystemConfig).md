@@ -13,21 +13,21 @@
 ## Tables Used to Detect IoCs:
 | **Parameter**       | **Description**                                                              |
 |---------------------|------------------------------------------------------------------------------|
-| **Name**| DeviceProcessEvents                                                            |
-| **Info**| https://learn.microsoft.com/en-us/defender-xdr/advanced-hunting-deviceprocessevents-table |
-| **Purpose**| Used to detect any PowerShell or command-line activities related to disabling Defender, enabling RDP, or modifying system configurations. |
-
-| **Parameter**       | **Description**                                                              |
-|---------------------|------------------------------------------------------------------------------|
 | **Name**| DeviceRegistryEvents                                                           |
 | **Info**| https://learn.microsoft.com/en-us/defender-xdr/advanced-hunting-deviceregistryevents-table |
-| **Purpose**| Used to detect suspicious registry modifications such as disabling UAC, modifying firewall rules, or changing update policies. |
+| **Purpose**| Check for unauthorized registry changes, particularly those targeting security-related keys (e.g., Disabled Windows Defender, Modified UAC settings, Changed system policies). |
 
 | **Parameter**       | **Description**                                                              |
 |---------------------|------------------------------------------------------------------------------|
-| **Name**| DeviceFileEvents                                                              |
-| **Info**| https://learn.microsoft.com/en-us/defender-xdr/advanced-hunting-devicefileevents-table |
-| **Purpose**| Used to detect unauthorized software installations, changes to local administrator accounts, or file creations associated with persistence. |
+| **Name**| DeviceProcessEvents                                                            |
+| **Info**| https://learn.microsoft.com/en-us/defender-xdr/advanced-hunting-deviceprocessevents-table |
+| **Purpose**| Check for suspicious processes used to execute configuration changes (e.g., regedit.exe, powershell.exe, cmd.exe, sc.exe) and for group policy modifications (e.g., changes to the Administrators group). |
+
+| **Parameter**       | **Description**                                                              |
+|---------------------|------------------------------------------------------------------------------|
+| **Name**| DeviceNetworkEvents                                                           |
+| **Info**| https://learn.microsoft.com/en-us/defender-xdr/advanced-hunting-devicenetworkevents-table |
+| **Purpose**| Check for unusual network activity following system configuration changes. |
 
 ---
 
